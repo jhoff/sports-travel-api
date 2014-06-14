@@ -1,0 +1,36 @@
+// Sports Travel API configuration file
+
+var config = {
+/* Uncomment the sports you want to support, and populate the keys and options accordingly
+
+  mlb: {
+    key: "_mlb_api_key",
+    version: 4,
+    accesslevel: "t",
+    seasons: [ 2013, 2014 ]
+  },
+
+  nba: {
+    key: "_nba_api_key",
+    version: 3,
+    accesslevel: "t",
+    seasons: [ 2013 ]
+  },
+
+  nfl: {
+    key: "_nfl_api_key",
+    version: 1,
+    accesslevel: "t",
+    seasons: [ 2010, 2011, 2012, 2013 ]
+  },
+
+  nhl: {
+    key: "_nhl_api_key",
+    version: 3,
+    accesslevel: "t",
+    seasons: [ 2013 ]
+  }
+*/
+};
+
+module.exports = config;
