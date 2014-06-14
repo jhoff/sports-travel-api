@@ -15,10 +15,10 @@ You must specify your own SportsData API keys in config.js. You only need to pro
 Usage
 --------------
 
-* http://localhost/api/sports - retrieves a list of configured sports
-* http://localhost/api/[sport]/seasons - gets a list of seasons available for the specified sport
-* http://localhost/api/[sport]/[season]/teams - gets a list of teams available for the specified season
-* http://localhost/api/[sport]/[season]/[team] - gets the travel schedule for the specified team
+* http://localhost:8888/sports - retrieves a list of configured sports
+* http://localhost:8888/[sport]/seasons - gets a list of seasons available for the specified sport
+* http://localhost:8888/[sport]/[season]/teams - gets a list of teams available for the specified season
+* http://localhost:8888/[sport]/[season]/[team] - gets the travel schedule for the specified team
 
 Caching
 -------
