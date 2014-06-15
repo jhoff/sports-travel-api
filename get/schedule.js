@@ -58,14 +58,15 @@ module.exports = function(sport,season,team,callback) {
           for( var w in weeks ) {
             for( var g in weeks[w].games ) {
               var e = weeks[w].games[g];
+              console.log( e.venue );
               if( e.home === team.toUpperCase() || e.away === team.toUpperCase() ) {
-                if( homeVenue === null && e.home === team.toUpperCase() ) { homeVenue = e.venue.name + ', ' + e.venue.city; }
+                if( homeVenue === null && e.home === team.toUpperCase() ) { homeVenue = e.venue.name + ', ' + e.venue.city + ' ' + e.venue.zip; }
                 games.push({
                   start: e.scheduled,
                   id: e.id,
                   visitor: e.away.toLowerCase(),
                   home: e.home.toLowerCase(),
-                  venue: e.venue.name + ', ' + e.venue.city,
+                  venue: e.venue.name + ', ' + e.venue.city + ' ' + e.venue.zip,
                 });
               }
             }
@@ -91,13 +92,21 @@ module.exports = function(sport,season,team,callback) {
           for( var v in events ) {
             var e = events[v];
             if( e.home[0].$.alias === team.toUpperCase() || e.away[0].$.alias === team.toUpperCase() ) {
-              if( homeVenue === null && e.home[0].$.alias === team.toUpperCase() ) { homeVenue = e.venue[0].$.name + ', ' + e.venue[0].$.city; }
+              if( e.venue[0].$.country === 'USA' ) {
+                var venue = e.venue[0].$.address + ', ' + e.venue[0].$.city + ' ' + e.venue[0].$.state + ', ' + e.venue[0].$.zip + ', USA';
+              } else {
+                var venue = e.venue[0].$.address + ', ' + e.venue[0].$.city;
+                if( e.venue[0].$.state ) { venue += ' ' + e.venue[0].$.state; }
+                if( e.venue[0].$.country === 'GBR' ) { venue += ', Great Britain'; } else { venue += ', ' + e.venue[0].$.country }
+                if( e.venue[0].$.zip ) { venue += ' ' + e.venue[0].$.zip; }
+              }
+              if( homeVenue === null && e.home[0].$.alias === team.toUpperCase() ) { homeVenue = venue; }
               games.push({
                 start: e.$.scheduled,
                 id: e.$.id,
                 visitor: e.away[0].$.name.toLowerCase(),
                 home: e.home[0].$.name.toLowerCase(),
-                venue: e.venue[0].$.name + ', ' + e.venue[0].$.city,
+                venue: venue,
               });
             }
           }

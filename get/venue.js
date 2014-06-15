@@ -13,7 +13,7 @@ module.exports = function(sport,season,callback) {
 
         for( var i in data ) {
           if( data[i].$.market !== '' ) {
-            venues[data[i].$.id] = data[i].$.name + ', ' + data[i].$.market;
+            venues[data[i].$.id] = data[i].$.name + ' near ' + data[i].$.market;
           }
         }
 
