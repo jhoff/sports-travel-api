@@ -1,13 +1,13 @@
 var sportsdata = require('../sportsdata');
 
-module.exports = function(sport,season,callback) {
+module.exports = function(league,season,callback) {
   var bridge = new sportsdata(this.config);
 
-  // populate the data object based on sport / season
-  console.log( "fetching teams for " + sport + ", " + season );
-  switch(sport) {
+  // populate the data object based on league / season
+  console.log( "fetching teams for " + league + ", " + season );
+  switch(league) {
     case 'mlb':
-      bridge.fetch( sport, '/teams/' + season + '.xml', function(result) {
+      bridge.fetch( league, '/teams/' + season + '.xml', function(result) {
         var data = result.teams.team,
             teams = {};
 
@@ -22,7 +22,7 @@ module.exports = function(sport,season,callback) {
       });
       break;
     case 'nfl':
-      bridge.fetch( sport, '/teams/hierarchy.json', function(data) {
+      bridge.fetch( league, '/teams/hierarchy.json', function(data) {
         var teams = {};
 
         for( var c in data.conferences ) {
@@ -39,7 +39,7 @@ module.exports = function(sport,season,callback) {
       break;
     case 'nhl':
     case 'nba':
-      bridge.fetch( sport, '/league/hierarchy.xml', function(data) {
+      bridge.fetch( league, '/league/hierarchy.xml', function(data) {
         var teams = {};
 
         for( var c in data.league.conference ) {

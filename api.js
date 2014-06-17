@@ -13,9 +13,9 @@ api.prototype.run = function() {
 }
 
 api.prototype.parseConfig = function() {
-  for( var sport in this.config ) {
-    if( this.config[sport] !== null ) {
-      this.data[sport] = [];
+  for( var league in this.config ) {
+    if( this.config[league] !== null ) {
+      this.data[league] = [];
     }
   }
   if( this.data.length === 0 ) {
@@ -27,7 +27,7 @@ api.prototype.parseConfig = function() {
 api.prototype.start = function() {
   // primary routing table
   var router = new director.http.Router({
-    '/:sport': { get: this.routeSport,
+    '/:league': { get: this.routeLeague,
       '/:season': { get: this.routeSeason,
         '/:team': { get: this.routeTeam }
       }
@@ -61,7 +61,7 @@ api.prototype.start = function() {
   console.log("Server running at http://127.0.0.1:" + this.port);
 }
 
-api.prototype.routeSport = require('./route/sport');
+api.prototype.routeLeague = require('./route/league');
 api.prototype.routeSeason = require('./route/season');
 api.prototype.routeTeam = require('./route/team');
 

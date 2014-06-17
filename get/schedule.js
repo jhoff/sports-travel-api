@@ -12,44 +12,44 @@ var sortByStart = function(a, b){
   return 0;
 };
 
-module.exports = function(sport,season,team,callback) {
+module.exports = function(league,season,team,callback) {
   var bridge = new sportsdata(this.config);
 
   // check the cache
-  if( !schedule_cache[sport + season + team] ) {
+  if( !schedule_cache[league + season + team] ) {
 
-    // populate the data object based on sport / season
-    console.log( "fetching schedule for " + sport + ", " + season + ", " + team );
-    switch(sport) {
+    // populate the data object based on league / season
+    console.log( "fetching schedule for " + league + ", " + season + ", " + team );
+    switch(league) {
       case 'mlb':
-        bridge.fetch( sport, '/schedule/' + season + '.xml', function(result) {
+        bridge.fetch( league, '/schedule/' + season + '.xml', function(result) {
           var events = result.calendars.event,
-              teamData = this.data[sport][season].teams[team],
-              homeVenue = this.data[sport][season].venues[teamData.venue],
+              teamData = this.data[league][season].teams[team],
+              homeVenue = this.data[league][season].venues[teamData.venue],
               games = [];
 
           for( var i in events ) {
             var e = events[i]
-            if( ( e.$.home === teamData.id || e.$.visitor === teamData.id ) && this.data[sport][season].venues[e.$.venue] ) {
+            if( ( e.$.home === teamData.id || e.$.visitor === teamData.id ) && this.data[league][season].venues[e.$.venue] ) {
               games.push({
                 start: e.scheduled_start[0],
                 id: e.$.id,
-                visitor: this.data[sport][season].teamMap[e.$.visitor],
-                home: this.data[sport][season].teamMap[e.$.home],
-                venue: this.data[sport][season].venues[e.$.venue],
+                visitor: this.data[league][season].teamMap[e.$.visitor],
+                home: this.data[league][season].teamMap[e.$.home],
+                venue: this.data[league][season].venues[e.$.venue],
               });
             }
           }
 
           games.sort(sortByStart);
 
-          schedule_cache[sport + season + team] = calculateTravel( homeVenue, games );
+          schedule_cache[league + season + team] = calculateTravel( homeVenue, games );
 
-          callback(schedule_cache[sport + season + team]);
+          callback(schedule_cache[league + season + team]);
         }.bind(this));
         break;
       case 'nfl':
-        bridge.fetch( sport, '/' + season + '/reg/schedule.json', function(result) {
+        bridge.fetch( league, '/' + season + '/reg/schedule.json', function(result) {
           var weeks = result.weeks,
               homeVenue = null,
               games = [];
@@ -58,7 +58,6 @@ module.exports = function(sport,season,team,callback) {
           for( var w in weeks ) {
             for( var g in weeks[w].games ) {
               var e = weeks[w].games[g];
-              console.log( e.venue );
               if( e.home === team.toUpperCase() || e.away === team.toUpperCase() ) {
                 if( homeVenue === null && e.home === team.toUpperCase() ) { homeVenue = e.venue.name + ', ' + e.venue.city + ' ' + e.venue.zip; }
                 games.push({
@@ -75,14 +74,14 @@ module.exports = function(sport,season,team,callback) {
           // sort the games by start date
           games.sort(sortByStart);
 
-          schedule_cache[sport + season + team] = calculateTravel(homeVenue, games, true);
+          schedule_cache[league + season + team] = calculateTravel(homeVenue, games, true);
 
-          callback( schedule_cache[sport + season + team] );
+          callback( schedule_cache[league + season + team] );
         }.bind(this));
         break;
       case 'nhl':
       case 'nba':
-        bridge.fetch( sport, '/games/' + season + '/reg/schedule.xml', function(result) {
+        bridge.fetch( league, '/games/' + season + '/reg/schedule.xml', function(result) {
 
           var events = result.league['season-schedule'][0].games[0].game,
               homeVenue = null,
@@ -92,6 +91,7 @@ module.exports = function(sport,season,team,callback) {
           for( var v in events ) {
             var e = events[v];
             if( e.home[0].$.alias === team.toUpperCase() || e.away[0].$.alias === team.toUpperCase() ) {
+              // some NBA games are played in Mexico and London, so we need to make sure the venue is structured properly in all cases
               if( e.venue[0].$.country === 'USA' ) {
                 var venue = e.venue[0].$.address + ', ' + e.venue[0].$.city + ' ' + e.venue[0].$.state + ', ' + e.venue[0].$.zip + ', USA';
               } else {
@@ -114,15 +114,15 @@ module.exports = function(sport,season,team,callback) {
           // sort the games by start date
           games.sort(sortByStart);
 
-          schedule_cache[sport + season + team] = calculateTravel(homeVenue, games);
-          callback( schedule_cache[sport + season + team] );
+          schedule_cache[league + season + team] = calculateTravel(homeVenue, games);
+          callback( schedule_cache[league + season + team] );
         }.bind(this));
         break;
       default:
         callback({});
     }
   } else {
-    callback(schedule_cache[sport + season + team]);
+    callback(schedule_cache[league + season + team]);
   }
 
 };

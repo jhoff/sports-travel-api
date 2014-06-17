@@ -13,12 +13,12 @@ function sportsdata(config) {
   this.config = config;
 };
 
-sportsdata.prototype.fetch = function( sport, url, callback ) {
-  if( !url_cache[sport+url] ) {
+sportsdata.prototype.fetch = function( league, url, callback ) {
+  if( !url_cache[league+url] ) {
     // make sure we don't make calls more frequently than every second, or it will fail.
     var timeToWait = ( Date.now() - mostRecentQuery < 1000 ? 1000 - ( Date.now() - mostRecentQuery ) : 1 );
     setTimeout( function() {
-      request( this.prepareUrl( sport, url ) , function (error, response, body) {
+      request( this.prepareUrl( league, url ) , function (error, response, body) {
         mostRecentQuery = Date.now();
         if( error || response.statusCode !== 200) {
           console.log(error);
@@ -26,29 +26,29 @@ sportsdata.prototype.fetch = function( sport, url, callback ) {
         
         if( url.split('.').pop() === 'xml' ) {
           xmlparser.parseString(body, function (err, result) {
-            url_cache[sport+url] = result;
+            url_cache[league+url] = result;
             callback( result );
           });
         } else {
-          url_cache[sport+url] = JSON.parse(response.body);
-          callback( url_cache[sport+url] );
+          url_cache[league+url] = JSON.parse(response.body);
+          callback( url_cache[league+url] );
         }
       });
     }.bind(this), timeToWait);
   } else {
-    callback( url_cache[sport+url] );
+    callback( url_cache[league+url] );
   }
 }
 
-sportsdata.prototype.prepareUrl = function( sport, url ) {
+sportsdata.prototype.prepareUrl = function( league, url ) {
   return "http://api.sportsdatallc.org/"
-         + sport
+         + league
          + "-"
-         + this.config[sport].accesslevel
-         + this.config[sport].version
+         + this.config[league].accesslevel
+         + this.config[league].version
          + url
          + "?api_key="
-         + this.config[sport].key
+         + this.config[league].key
 }
 
 module.exports = sportsdata;

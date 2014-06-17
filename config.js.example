@@ -1,7 +1,7 @@
 // Sports Travel API configuration file
 
 var config = {
-/* Uncomment the sports you want to support, and populate the keys and options accordingly
+/* Uncomment the leagues you want to support, and populate the keys and options accordingly
 
   mlb: {
     key: "_mlb_api_key",
