@@ -46,6 +46,7 @@ api.prototype.start = function() {
   // create the server
   var server = http.createServer(function (req, res) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.writeHead(200, { 'Access-Control-Allow-Origin': '*' });
     router.dispatch(req, res, function (err) {
       if (err) {
         res.writeHead(404);
