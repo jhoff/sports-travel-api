@@ -11,12 +11,13 @@ module.exports = function() {
     var teams = {},
         keys = Object.keys(this.api.data[league][season].teams);
     for( var t in keys ) {
+      if( !keys.hasOwnProperty(t) ) { continue; }
       teams[keys[t]] = this.api.data[league][season].teams[keys[t]].market + ' ' + this.api.data[league][season].teams[keys[t]].name;
     }
     this.res.end(JSON.stringify(teams));
   } else {
     if ( !this.api.data[league][season].teams.hasOwnProperty(team) ) {
-      this.res.end(JSON.stringify({'err': "'" + team + "' is not a valid team. See /" + league + "/" + season + "/teams"}));
+      next("'" + team + "' is not a valid team. See /" + league + "/" + season + "/teams");
     } else {
       this.res.team = team;
       getVenues.call(this.api,league,season,function(venues){

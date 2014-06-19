@@ -3,15 +3,17 @@ module.exports = function() {
       league = arguments[0].toLowerCase();
 
   if( league === "leagues" ) {
-    this.res.end(JSON.stringify(Object.keys(this.api.data)));
+    this.res.write(JSON.stringify(Object.keys(this.api.data)));
+    next();
   } else {
     if( !this.api.data.hasOwnProperty(league) ) {
-      this.res.end(JSON.stringify({'err': '"' + league + '" is not a valid league. See /leagues for available leagues'}));
+      next('"' + league + '" is not a valid league. See /leagues for available leagues');
     } else {
       this.res.league = league;
       this.api.data[league] = {};
       var seasons = this.api.config[league].seasons
       for( var season in seasons ) {
+        if( !seasons.hasOwnProperty(season) ) { continue; }
         this.api.data[league][seasons[season]] = {};
       }
       next();

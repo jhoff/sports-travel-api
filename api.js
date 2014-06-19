@@ -14,6 +14,7 @@ api.prototype.run = function() {
 
 api.prototype.parseConfig = function() {
   for( var league in this.config ) {
+    if( !this.config.hasOwnProperty(league) ) { continue; }
     if( this.config[league] !== null ) {
       this.data[league] = [];
     }
@@ -50,10 +51,11 @@ api.prototype.start = function() {
     router.dispatch(req, res, function (err) {
       if (err) {
         res.writeHead(404);
-        res.end('Page not found! ' + err);
+        res.end(JSON.stringify({'err':err}));
+      } else {
+        res.end();
+        console.log(req.connection.remoteAddress + " " + req.url );
       }
-      res.end();
-      console.log("Served: " + req.url );
     });
   });
 

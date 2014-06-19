@@ -1,4 +1,5 @@
-var sportsdata = require('../sportsdata');
+var sportsdata = require('../sportsdata'),
+    inspect = require('eyes').inspector({maxLength:0});
 
 var schedule_cache = {}
 
@@ -19,31 +20,38 @@ module.exports = function(league,season,team,callback) {
   if( !schedule_cache[league + season + team] ) {
 
     // populate the data object based on league / season
-    console.log( "fetching schedule for " + league + ", " + season + ", " + team );
     switch(league) {
       case 'mlb':
         bridge.fetch( league, '/schedule/' + season + '.xml', function(result) {
           var events = result.calendars.event,
               teamData = this.data[league][season].teams[team],
-              homeVenue = this.data[league][season].venues[teamData.venue],
+              homeVenue = this.data[league][season].venues[teamData.venue].search,
               games = [];
 
           for( var i in events ) {
-            var e = events[i]
-            if( ( e.$.home === teamData.id || e.$.visitor === teamData.id ) && this.data[league][season].venues[e.$.venue] ) {
+            if( !events.hasOwnProperty(i) ) { continue; }
+            var e = events[i],
+                homeId = this.data[league][season].teamMap[e.$.home],
+                awayId = this.data[league][season].teamMap[e.$.visitor],
+                venue = this.data[league][season].venues[e.$.venue];
+
+            if( ( homeId === team || awayId === team ) && venue ) {
               games.push({
                 start: e.scheduled_start[0],
                 id: e.$.id,
-                visitor: this.data[league][season].teamMap[e.$.visitor],
-                home: this.data[league][season].teamMap[e.$.home],
-                venue: this.data[league][season].venues[e.$.venue],
+                visitor: this.data[league][season].teams[awayId],
+                home: this.data[league][season].teams[homeId],
+                venue: venue
               });
             }
           }
 
           games.sort(sortByStart);
 
-          schedule_cache[league + season + team] = calculateTravel( homeVenue, games );
+          schedule_cache[league + season + team] = {
+            venues: uniqueVenues( homeVenue, games ),
+            travel: calculateTravel( homeVenue, games ),
+          };
 
           callback(schedule_cache[league + season + team]);
         }.bind(this));
@@ -56,16 +64,24 @@ module.exports = function(league,season,team,callback) {
 
           // normalize the data into a list of games
           for( var w in weeks ) {
+            if( !weeks.hasOwnProperty(w) ) { continue; }
             for( var g in weeks[w].games ) {
-              var e = weeks[w].games[g];
-              if( e.home === team.toUpperCase() || e.away === team.toUpperCase() ) {
-                if( homeVenue === null && e.home === team.toUpperCase() ) { homeVenue = e.venue.name + ', ' + e.venue.city + ' ' + e.venue.zip; }
+              if( !weeks[w].games.hasOwnProperty(g) ) { continue; }
+              var e = weeks[w].games[g],
+                  homeId = e.home.toLowerCase(),
+                  awayId = e.away.toLowerCase();
+
+              if( homeId === team || awayId === team ) {
+                if( homeVenue === null && homeId === team ) { homeVenue = e.venue.name + ', ' + e.venue.city + ' ' + e.venue.zip; }
                 games.push({
                   start: e.scheduled,
                   id: e.id,
-                  visitor: e.away.toLowerCase(),
-                  home: e.home.toLowerCase(),
-                  venue: e.venue.name + ', ' + e.venue.city + ' ' + e.venue.zip,
+                  visitor: this.data[league][season].teams[awayId],
+                  home: this.data[league][season].teams[homeId],
+                  venue: {
+                    search: e.venue.name + ', ' + e.venue.city + ' ' + e.venue.zip,
+                    info: e.venue
+                  }
                 });
               }
             }
@@ -74,7 +90,10 @@ module.exports = function(league,season,team,callback) {
           // sort the games by start date
           games.sort(sortByStart);
 
-          schedule_cache[league + season + team] = calculateTravel(homeVenue, games, true);
+          schedule_cache[league + season + team] = {
+            venues: uniqueVenues( homeVenue, games ),
+            travel: calculateTravel( homeVenue, games, true )
+          };
 
           callback( schedule_cache[league + season + team] );
         }.bind(this));
@@ -89,32 +108,47 @@ module.exports = function(league,season,team,callback) {
 
           // normalize the data into a list of games
           for( var v in events ) {
-            var e = events[v];
-            if( e.home[0].$.alias === team.toUpperCase() || e.away[0].$.alias === team.toUpperCase() ) {
+            if( !events.hasOwnProperty(v) ) { continue; }
+            var e = events[v],
+                homeId = this.data[league][season].teamMap[e.home[0].$.id],
+                awayId = this.data[league][season].teamMap[e.away[0].$.id];
+
+            if( homeId === team || awayId === team ) {
+
               // some NBA games are played in Mexico and London, so we need to make sure the venue is structured properly in all cases
               if( e.venue[0].$.country === 'USA' ) {
-                var venue = e.venue[0].$.address + ', ' + e.venue[0].$.city + ' ' + e.venue[0].$.state + ', ' + e.venue[0].$.zip + ', USA';
+                var vsearch = e.venue[0].$.address + ', ' + e.venue[0].$.city + ' ' + e.venue[0].$.state + ', ' + e.venue[0].$.zip + ', USA';
               } else {
-                var venue = e.venue[0].$.address + ', ' + e.venue[0].$.city;
-                if( e.venue[0].$.state ) { venue += ' ' + e.venue[0].$.state; }
-                if( e.venue[0].$.country === 'GBR' ) { venue += ', Great Britain'; } else { venue += ', ' + e.venue[0].$.country }
-                if( e.venue[0].$.zip ) { venue += ' ' + e.venue[0].$.zip; }
+                var vsearch = e.venue[0].$.address + ', ' + e.venue[0].$.city;
+                if( e.venue[0].$.state ) { vsearch += ' ' + e.venue[0].$.state; }
+                if( e.venue[0].$.country === 'GBR' ) { vsearch += ', Great Britain'; } else { vsearch += ', ' + e.venue[0].$.country }
+                if( e.venue[0].$.zip ) { vsearch += ' ' + e.venue[0].$.zip; }
               }
-              if( homeVenue === null && e.home[0].$.alias === team.toUpperCase() ) { homeVenue = venue; }
+
+              if( homeVenue === null && homeId === team ) { homeVenue = vsearch; }
+
               games.push({
                 start: e.$.scheduled,
                 id: e.$.id,
-                visitor: e.away[0].$.name.toLowerCase(),
-                home: e.home[0].$.name.toLowerCase(),
-                venue: venue,
+                visitor: this.data[league][season].teams[awayId],
+                home: this.data[league][season].teams[homeId],
+                venue: {
+                  search: vsearch,
+                  info: e.venue[0].$
+                }
               });
+
             }
           }
           
           // sort the games by start date
           games.sort(sortByStart);
 
-          schedule_cache[league + season + team] = calculateTravel(homeVenue, games);
+          schedule_cache[league + season + team] = {
+            venues: uniqueVenues( homeVenue, games ),
+            travel: calculateTravel( homeVenue, games )
+          };
+
           callback( schedule_cache[league + season + team] );
         }.bind(this));
         break;
@@ -132,12 +166,13 @@ function calculateTravel( homeVenue, games, homeBetweenGames ) {
   var homeBetweenGames = homeBetweenGames || false,
       travel = [homeVenue];
 
-  // every time the venue changes, the venue to the stack
+  // every time the venue changes, push the venue to the stack
   for( var i in games ) {
-    if( travel[travel.length - 1] !== games[i].venue ) {
-      travel.push(games[i].venue);
+    if( !games.hasOwnProperty(i) ) { continue; }
+    if( travel[travel.length - 1] !== games[i].venue.search ) {
+      travel.push(games[i].venue.search);
     }
-    if( homeBetweenGames && games[i].venue !== homeVenue ) {
+    if( homeBetweenGames && games[i].venue.search !== homeVenue ) {
       travel.push(homeVenue);
     }
   }
@@ -147,4 +182,39 @@ function calculateTravel( homeVenue, games, homeBetweenGames ) {
   }
   
   return travel;
+}
+
+function uniqueVenues( home, games ) {
+  var unique = {};
+
+  for( var i in games ) {
+    if( !games.hasOwnProperty(i) ) { continue; }
+
+    // make object copies so we don't alter refrences
+    var game = JSON.parse(JSON.stringify( games[i] )),
+        venue = JSON.parse(JSON.stringify( game.venue )),
+        address = venue.search;
+
+    // clean up the game object
+    if( game.venue ) delete game.venue;
+    if( game.visitor.venue ) delete game.visitor.venue;
+    if( game.home.venue ) delete game.home.venue;
+
+    // if we've haven't seen this venue yet, add a new entry;
+    if( !unique[ address ] ) {
+      // base venue info
+      unique[ address ] = venue.info;
+      // home team true / false
+      if( address === home ) {
+        unique[ address ].homeVenue = true;
+      }
+      // start a games array
+      unique[ address ].games = [];
+    }
+
+    // add it to the list
+    unique[ address ].games.push( game );
+  }
+
+  return unique;
 }

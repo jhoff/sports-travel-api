@@ -7,18 +7,21 @@ module.exports = function() {
       seasonInt = parseInt(arguments[1],10);
 
   if( season.toLowerCase() === "seasons" ) {
-    this.res.end(JSON.stringify(Object.keys(this.api.data[league])));
+    this.res.write(JSON.stringify(Object.keys(this.api.data[league])));
+    next();
   } else {
     seasonInt = parseInt(season,10);
     if ( !this.api.data[league].hasOwnProperty(seasonInt) ) {
-      this.res.end(JSON.stringify({'err': "'" + season + "' is not a valid season. See /" + league + "/seasons"}));
+      next("'" + season + "' is not a valid season. See /" + league + "/seasons");
     } else {
       this.res.season = seasonInt;
       getTeams.call(this.api,league,seasonInt,function(teams){
 
         var map = {};
         for( var i in teams ) {
-          map[teams[i].id] = teams[i].market + ' ' + teams[i].name;
+          if( !teams.hasOwnProperty(i) ) { continue; }
+          var identifier = teams[i].abbr || teams[i].alias || teams[i].id; // yay data inconsistency
+          map[teams[i].id] = identifier.toLowerCase();
         }
 
         this.api.data[league][season].teamMap = map;
