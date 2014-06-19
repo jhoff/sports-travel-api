@@ -1,5 +1,4 @@
-var sportsdata = require('../sportsdata'),
-    inspect = require('eyes').inspector({maxLength:0});
+var sportsdata = require('../sportsdata');
 
 var schedule_cache = {}
 
